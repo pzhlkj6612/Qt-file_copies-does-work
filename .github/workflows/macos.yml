@@ -1,0 +1,76 @@
+name: macos CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+  workflow_dispatch:
+
+jobs:
+  job:
+    runs-on: macos-10.15
+    strategy:
+      matrix:
+        qt_ver:
+          - 6.1.0
+          - 6.0.2
+          - 6.0.1
+          - 6.0.0
+          - 5.15.2
+          - 5.15.1
+          - 5.15.0
+          - 5.14.2
+          - 5.14.1
+          - 5.14.0
+          - 5.13.2
+          - 5.13.1
+          - 5.13.0
+          - 5.12.10
+          - 5.12.9
+          - 5.12.8
+          - 5.12.7
+          - 5.12.6
+          - 5.12.5
+          - 5.12.4
+          - 5.12.3
+          # https://github.com/qt/qtbase/commit/7227e54445021b8c2ce4f4ab638cc7d43e32a5a7
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v2
+        with:
+          version: ${{ matrix.qt_ver }}
+
+      - name: Find Qt 5
+        if: ${{ startsWith(matrix.qt_ver, '5') }}
+        run: |
+          echo 'Qt5_DIR = ${{ env.Qt5_DIR }}'
+          echo 'Qt_DIR=${{ env.Qt5_DIR }}' >> ${GITHUB_ENV}
+
+      - name: Find Qt 6
+        if: ${{ startsWith(matrix.qt_ver, '6') }}
+        run: |
+          echo 'Qt6_DIR = ${{ env.Qt6_DIR }}'
+          echo 'Qt_DIR=${{ env.Qt6_DIR }}' >> ${GITHUB_ENV}
+
+      - name: Configure Qt env
+        run: |
+          echo '${{ env.Qt_DIR }}/bin' >> ${GITHUB_PATH}
+
+      - name: Test Qt & env
+        run: |
+          echo ${PATH}
+
+          which 'qmake'
+
+          qmake '-query'
+
+      - run: qmake && make -j$(sysctl -n hw.logicalcpu)
+
+      - run: |
+          ls -l .
+          ls -l ./myFiles/
